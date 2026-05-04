@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>range 教學小工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1100px;
+            position: relative; 
+        }
+        
+        .top-right-image {
+            position: absolute;
+            top: 25px;    
+            right: 30px;  
+            width: 160px; 
+            height: auto;
+            opacity: 0.9; 
+        }
+
+        h2 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px; 
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 48px; 
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .python-logo {
+            width: 55px; 
+            height: auto;
+        }
+        
+        /* 左右雙欄佈局 */
+        .layout-wrapper {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        .left-panel {
+            flex: 1.2; 
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 程式碼區域 */
+        .code-display {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 28px; 
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .code-keyword { color: #c678dd; }
+        .code-func { color: #61afef; }
+        
+        .editable-args {
+            border-bottom: 2px dashed #d19a66;
+            cursor: text;
+            padding: 0 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            display: inline-block;
+            min-width: 45px;
+            outline: none;
+            color: #d19a66;
+            font-weight: bold;
+            background-color: rgba(209, 154, 102, 0.1);
+        }
+        .editable-args:hover, .editable-args:focus {
+            background-color: rgba(209, 154, 102, 0.3);
+            color: #e5c07b;
+            border-bottom-color: #e5c07b;
+        }
+
+        /* 輸入框橫向排列 */
+        .inputs-row {
+            display: flex;
+            justify-content: space-between;
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .input-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        .input-label {
+            font-weight: bold;
+            color: #34495e;
+            font-size: 22px; 
+        }
+        .number-input {
+            width: 90px; 
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 24px; 
+            font-weight: bold;
+            font-family: inherit;
+            color: #2c3e50;
+            transition: border-color 0.2s;
+        }
+        .number-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+        
+        /* 按鈕設計 */
+        .btn-action {
+            width: 100%;
+            padding: 15px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 24px; 
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-result { background-color: #3498db; }
+        .btn-result:hover { background-color: #2980b9; }
+        .btn-analyze { background-color: #e67e22; }
+        .btn-analyze:hover { background-color: #d35400; }
+
+        /* 結果顯示區 */
+        .result-box {
+            background: #e8f4fd;
+            padding: 25px 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px dashed #bce0fd;
+            display: none;
+            min-height: 100px;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .array-display {
+            font-size: 34px; 
+            font-weight: bold;
+            color: #2980b9;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+        .count-display {
+            color: #7f8c8d;
+            font-size: 20px; 
+        }
+        .count-number {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 26px; 
+        }
+
+        /* 解析過程區塊 (卡片背景) */
+        .analysis-box {
+            background-color: #fff8e1;
+            border-left: 6px solid #f39c12;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 24px; /* 🔥 一般說明文字字體大小 24px */
+            color: #2c3e50;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+            display: none;
+            flex-grow: 1; 
+            overflow-y: auto;
+            max-height: 430px;
+        }
+
+        /* 全新解析過程卡片排版 */
+        .analyze-row {
+            background-color: white;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            border-left: 6px solid #3498db; 
+            line-height: 1.8;
+        }
+        .analyze-row.failed {
+            border-left-color: #e74c3c; 
+            opacity: 0.95;
+        }
+        .badge-loop {
+            display: inline-block;
+            background-color: #34495e;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 20px; /* 🔥 標籤字體大小改為 20px */
+            font-weight: bold;
+            margin-right: 10px;
+            margin-bottom: 8px;
+        }
+        .badge-loop.failed-badge {
+            background-color: #e74c3c;
+        }
+        .math-text {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 24px; /* 🔥 算式字體大小 24px */
+            font-weight: bold;
+            color: #2980b9;
+            background-color: #f0f8ff;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .result-line {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #bdc3c7;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .result-text {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 24px; /* 🔥 結果字體大小 24px */
+            font-weight: bold;
+            color: #27ae60; 
+        }
+
+        /* 警告框 */
+        .alert-box {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 22px; 
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .alert-error {
+            background-color: #fadbd8;
+            color: #c0392b;
+            border: 1px solid #e74c3c;
+        }
+        .alert-warning {
+            background-color: #fdebd0;
+            color: #d35400;
+            border: 1px solid #f39c12;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 加在右上角的圖片 -->
+        <img src="資訊科技logo.png" alt="右上角裝飾圖片" class="top-right-image">
+
+        <h2>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt="Python Logo" class="python-logo">
+            range 教學小工具
+        </h2>
+
+        <div id="alert-box" class="alert-box"></div>
+
+        <div class="layout-wrapper">
+            <!-- 左欄：程式碼、參數輸入、顯示結果 -->
+            <div class="left-panel">
+                <div class="code-display">
+                    <span class="code-keyword">for</span> i <span class="code-keyword">in</span> <span class="code-func">range</span>(<span class="editable-args" id="code-args" contenteditable="true" spellcheck="false" title="支援輸入 1~3 個數字，例如: 10 或 2,10 或 2,10,2">1, 9, 3</span>):
+                </div>
+
+                <div class="inputs-row">
+                    <div class="input-col">
+                        <span class="input-label">起始值</span>
+                        <input type="number" id="num-start" class="number-input" value="1">
+                    </div>
+                    <div class="input-col">
+                        <span class="input-label">結束值</span>
+                        <input type="number" id="num-stop" class="number-input" value="9">
+                    </div>
+                    <div class="input-col">
+                        <span class="input-label">步進值</span>
+                        <input type="number" id="num-step" class="number-input" value="3">
+                    </div>
+                </div>
+
+                <button id="btn-result" class="btn-action btn-result">👁️ 顯示結果</button>
+
+                <div id="result-box" class="result-box" style="display: none;">
+                    <div class="array-display" id="array-display">[]</div>
+                    <div class="count-display">總共執行了 <span class="count-number" id="count-display">0</span> 次迴圈</div>
+                </div>
+            </div>
+
+            <!-- 右欄：解析過程 -->
+            <div class="right-panel">
+                <button id="btn-analyze" class="btn-action btn-analyze">📝 解析過程</button>
+                <div id="analysis-box" class="analysis-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const numStart = document.getElementById('num-start');
+        const numStop = document.getElementById('num-stop');
+        const numStep = document.getElementById('num-step');
+        const codeArgs = document.getElementById('code-args');
+
+        const alertBox = document.getElementById('alert-box');
+        const resultBox = document.getElementById('result-box');
+        const arrayDisplay = document.getElementById('array-display');
+        const countDisplay = document.getElementById('count-display');
+        const analysisBox = document.getElementById('analysis-box');
+        
+        const btnResult = document.getElementById('btn-result');
+        const btnAnalyze = document.getElementById('btn-analyze');
+
+        function resetDisplays() {
+            resultBox.style.display = 'none';
+            analysisBox.style.display = 'none';
+            alertBox.style.display = 'none';
+            alertBox.className = 'alert-box'; // 清除顏色狀態
+        }
+
+        function syncInputs(source) {
+            resetDisplays(); 
+            let start, stop, step;
+
+            if (source === 'number') {
+                start = parseInt(numStart.value);
+                stop = parseInt(numStop.value);
+                step = parseInt(numStep.value);
+                
+                start = isNaN(start) ? 0 : start;
+                stop = isNaN(stop) ? 0 : stop;
+                step = isNaN(step) ? 1 : step;
+
+                if (start === 0 && step === 1 && stop >= 0) {
+                    codeArgs.textContent = `${stop}`;
+                } else if (step === 1) {
+                    codeArgs.textContent = `${start}, ${stop}`;
+                } else {
+                    codeArgs.textContent = `${start}, ${stop}, ${step}`;
+                }
+            } else if (source === 'code') {
+                let parts = codeArgs.innerText.split(',');
+                let p0 = parseInt(parts[0]);
+                let p1 = parts.length > 1 ? parseInt(parts[1]) : NaN;
+                let p2 = parts.length > 2 ? parseInt(parts[2]) : NaN;
+
+                if (parts.length === 1 && !isNaN(p0)) {
+                    start = 0; stop = p0; step = 1;
+                } else if (parts.length === 2 && !isNaN(p0) && !isNaN(p1)) {
+                    start = p0; stop = p1; step = 1;
+                } else if (parts.length >= 3 && !isNaN(p0) && !isNaN(p1) && !isNaN(p2)) {
+                    start = p0; stop = p1; step = p2;
+                } else {
+                    start = parseInt(numStart.value);
+                    stop = parseInt(numStop.value);
+                    step = parseInt(numStep.value);
+                }
+
+                numStart.value = start;
+                numStop.value = stop;
+                numStep.value = step;
+            }
+        }
+
+        function getValues() {
+            return {
+                start: parseInt(numStart.value) || 0,
+                stop: parseInt(numStop.value) || 0,
+                step: parseInt(numStep.value) || 0
+            };
+        }
+
+        // 顯示最終結果陣列
+        function showResult() {
+            alertBox.style.display = 'none';
+            alertBox.className = 'alert-box';
+            
+            const { start, stop, step } = getValues();
+
+            if (step === 0) {
+                alertBox.classList.add('alert-error');
+                alertBox.textContent = '❌ range() 的步進值 (Step) 不能為 0！';
+                alertBox.style.display = 'block';
+                resultBox.style.display = 'none';
+                return;
+            }
+
+            let hasWarning = false;
+            
+            if (start > stop && step > 0) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 你要從 <b>${start}</b> 走到 <b>${stop}</b>，但步進值是正的 (<b>${step}</b>)<br>方向走反了！迴圈不會執行。`;
+                hasWarning = true;
+            } else if (start < stop && step < 0) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 你要從 <b>${start}</b> 走到 <b>${stop}</b>，但步進值是負的 (<b>${step}</b>)<br>方向走反了！迴圈不會執行。`;
+                hasWarning = true;
+            } else if (start === stop) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 起始值和結束值都是 <b>${start}</b><br>因為 range 不包含結束值，迴圈不會執行。`;
+                hasWarning = true;
+            }
+
+            if (hasWarning) {
+                alertBox.style.display = 'block';
+            }
+
+            let result = [];
+            let count = 0;
+            const MAX_ELEMENTS = 200;
+
+            if (!hasWarning) {
+                if (step > 0) {
+                    for (let i = start; i < stop; i += step) {
+                        if (count >= MAX_ELEMENTS) { result.push('...'); break; }
+                        result.push(i);
+                        count++;
+                    }
+                } else {
+                    for (let i = start; i > stop; i += step) {
+                        if (count >= MAX_ELEMENTS) { result.push('...'); break; }
+                        result.push(i);
+                        count++;
+                    }
+                }
+            }
+
+            if (hasWarning || result.length === 0) {
+                arrayDisplay.innerHTML = '<span style="color: #95a5a6;">[]</span>';
+            } else {
+                arrayDisplay.textContent = `[${result.join(', ')}]`;
+            }
+            
+            countDisplay.textContent = count;
+            resultBox.style.display = 'flex'; 
+        }
+
+        // 顯示解析過程
+        function showAnalysis() {
+            alertBox.style.display = 'none';
+            alertBox.className = 'alert-box';
+            
+            const { start, stop, step } = getValues();
+
+            if (step === 0) {
+                alertBox.classList.add('alert-error');
+                alertBox.textContent = '❌ 錯誤：步進值不能為 0，無法進行解析！';
+                alertBox.style.display = 'block';
+                analysisBox.style.display = 'none';
+                return;
+            }
+
+            // 同步顯示警告
+            if (start > stop && step > 0) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 你要從 <b>${start}</b> 走到 <b>${stop}</b>，但步進值是正的 (<b>${step}</b>)<br>方向走反了！迴圈不會執行。`;
+                alertBox.style.display = 'block';
+            } else if (start < stop && step < 0) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 你要從 <b>${start}</b> 走到 <b>${stop}</b>，但步進值是負的 (<b>${step}</b>)<br>方向走反了！迴圈不會執行。`;
+                alertBox.style.display = 'block';
+            } else if (start === stop) {
+                alertBox.classList.add('alert-warning');
+                alertBox.innerHTML = `⚠️ 起始值和結束值都是 <b>${start}</b><br>因為 range 不包含結束值，迴圈不會執行。`;
+                alertBox.style.display = 'block';
+            }
+
+            let html = '';
+            let currentArr = [];
+            let loopCount = 1;
+            let i = start;
+            let isForward = step > 0;
+            let symbol = isForward ? '<' : '>';
+            let maxLoops = 100; 
+
+            let condition = isForward ? (i < stop) : (i > stop);
+            
+            if (condition) {
+                currentArr.push(i);
+                // 迴圈 1 卡片
+                html += `
+                    <div class="analyze-row">
+                        <div><span class="badge-loop">迴圈 ${loopCount}</span></div>
+                        <div>i = 起始值 <span class="math-text">${i}</span>，符合 <span class="math-text">i ${symbol} ${stop}</span> ✅</div>
+                        <div class="result-line">➔ 添加到清單：<span class="result-text">[${currentArr.join(', ')}]</span></div>
+                    </div>`;
+                
+                while (true) {
+                    loopCount++;
+                    if (loopCount > maxLoops) {
+                        html += `<div class="analyze-row">...(執行次數過多，省略顯示)</div>`;
+                        break;
+                    }
+
+                    let prev = i;
+                    i += step;
+                    condition = isForward ? (i < stop) : (i > stop);
+                    
+                    let stepStr = step > 0 ? `+${step}` : `${step}`;
+                    let stepLabel = loopCount === 2 ? '<span style="color: #7f8c8d;">(步進值)</span>' : '';
+
+                    if (condition) {
+                        currentArr.push(i);
+                        // 執行成功的卡片
+                        html += `
+                            <div class="analyze-row">
+                                <div><span class="badge-loop">迴圈 ${loopCount}</span></div>
+                                <div>i = ${prev} ${stepStr}${stepLabel} = <span class="math-text">${i}</span>，符合 <span class="math-text">i ${symbol} ${stop}</span> ✅</div>
+                                <div class="result-line">➔ 添加到清單：<span class="result-text">[${currentArr.join(', ')}]</span></div>
+                            </div>`;
+                    } else {
+                        // 迴圈結束的卡片 (紅色系)
+                        html += `
+                            <div class="analyze-row failed">
+                                <div><span class="badge-loop failed-badge">迴圈 ${loopCount}</span></div>
+                                <div>i = ${prev} ${stepStr} = <span class="math-text" style="color:#c0392b;">${i}</span>，<span class="math-text" style="color:#c0392b;">i ${symbol} ${stop}</span> 不成立 ❌</div>
+                                <div class="result-line" style="color:#c0392b;">➔ 條件不符，迴圈結束！</div>
+                            </div>`;
+                        break;
+                    }
+                }
+            } else {
+                // 第一圈就不成立的卡片 (空迴圈)
+                html += `
+                    <div class="analyze-row failed">
+                        <div><span class="badge-loop failed-badge">迴圈 1</span></div>
+                        <div>i = 起始值 <span class="math-text" style="color:#c0392b;">${i}</span>，<span class="math-text" style="color:#c0392b;">i ${symbol} ${stop}</span> 不成立 ❌</div>
+                        <div class="result-line" style="color:#c0392b;">💡 結論：因為起步條件就不成立，所以產生空清單 []。</div>
+                    </div>`;
+            }
+
+            analysisBox.innerHTML = html;
+            analysisBox.style.display = 'block'; 
+        }
+
+        numStart.addEventListener('input', () => syncInputs('number'));
+        numStop.addEventListener('input', () => syncInputs('number'));
+        numStep.addEventListener('input', () => syncInputs('number'));
+        codeArgs.addEventListener('input', () => syncInputs('code'));
+
+        codeArgs.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur();
+            }
+        });
+
+        btnResult.addEventListener('click', showResult);
+        btnAnalyze.addEventListener('click', showAnalysis);
+
+    </script>
+</body>
+</html>
